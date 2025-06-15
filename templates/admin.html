@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial; background: #f4f4f9; text-align: center; }
+        h1 { background: #4CAF50; color: white; padding: 20px; margin: 0; }
+
+        .top-bar {
+            margin: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        input[type="date"], button, .link-button {
+            padding: 10px 16px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button, .link-button {
+            background: #4CAF50;
+            color: white;
+        }
+
+        button:hover, .link-button:hover {
+            background: #45a049;
+        }
+
+        .link-button {
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<form method="POST" action="{{ url_for('admin') }}">
+    <div class="top-bar">
+        <label for="date">Filter by Date:</label>
+        <input type="date" name="date" id="date" value="{{ request.form.get('date', '') }}">
+        <button type="submit">Filter</button>
+        <a class="link-button" href="{{ url_for('export_csv') }}">Download CSV</a>
+        <a class="link-button" href="{{ url_for('index') }}">Generate QR</a>
+        <a class="link-button" href="{{ url_for('scan') }}">Mark Attendance</a>
+        <a class="link-button" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</form>
+
+<table>
+    <thead>
+        <tr><th>Name</th><th>Enrollment No</th><th>Timestamp</th></tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

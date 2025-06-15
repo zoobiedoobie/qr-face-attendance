@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scan QR and Face</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    #reader {
+      width: 320px;
+      max-width: 90vw;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background-color: white;
+      margin-bottom: 20px;
+    }
+
+    video, canvas {
+      display: none;
+    }
+
+    #status {
+      font-size: 18px;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h2>Scan your QR Code and show your face</h2>
+  <div id="reader"></div>
+  <video id="video" autoplay></video>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <p id="status"></p>
+
+  <script>
+    const statusElem = document.getElementById('status');
+
+    function captureFaceImage() {
+      return new Promise((resolve) => {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL('image/jpeg');
+        resolve(dataURL);
+      });
+    }
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+        document.getElementById('video').srcObject = stream;
+      });
+    }
+
+    async function onScanSuccess(qrMessage) {
+      statusElem.innerText = "QR scanned! Capturing face...";
+
+      const faceImage = await captureFaceImage();
+
+      fetch('/mark_attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          qr_data: qrMessage,
+          face_image: faceImage
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        Swal.fire({
+          icon: data.status === 'success' ? 'success' : 'warning',
+          title: data.status === 'success' ? 'Attendance Marked!' : 'Notice',
+          text: data.message
+        });
+        statusElem.innerText = data.message;
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Something went wrong while marking attendance.'
+        });
+        statusElem.innerText = "Something went wrong.";
+      });
+    }
+
+    // Start camera and QR reader
+    startCamera();
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      onScanSuccess,
+      errorMsg => {}
+    );
+  </script>
+</body>
+</html>

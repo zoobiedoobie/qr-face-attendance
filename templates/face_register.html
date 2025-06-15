@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Register</title>
+  <style>
+    video, canvas {
+      border: 1px solid black;
+      display: block;
+      margin-bottom: 10px;
+    }
+    input, button {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Register Face</h2>
+  <form id="faceForm">
+    <label>Enrollment Number:</label><br>
+    <input type="text" id="enrollment" required><br>
+    <video id="video" width="300" height="300" autoplay></video>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <button type="button" onclick="captureAndSubmit()">Capture & Register</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      });
+
+    function captureAndSubmit() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const image = canvas.toDataURL('image/jpeg');
+      const enrollment_no = document.getElementById('enrollment').value;
+
+      fetch('/register_face', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollment_no, image })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('status').innerText = data.message;
+      });
+    }
+  </script>
+</body>
+</html>
